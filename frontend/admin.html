@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin Dashboard</title>
+  <script src="js/api.js"></script>
+</head>
+<body>
+  <h2>Admin Dashboard</h2>
+  <button onclick="logout()">Logout</button>
+  <button onclick="window.location.href='create-user.html'">Create User</button>
+  <button onclick="window.location.href='change-password.html'">Change Password</button>
+  <h3>All Users:</h3>
+  <ul id="userList"></ul>
+
+  <script>
+
+    // Redirect to login if not authenticated
+    if (!getToken()) {
+      window.location.href = 'index.html';
+    }
+
+    function logout() {
+      removeToken();
+      window.location.href = 'index.html';
+    }
+
+    async function loadUsers() {
+      try {
+        const users = await apiRequest('/admin/users');
+        const list = document.getElementById('userList');
+        list.innerHTML = '';
+        users.forEach(user => {
+          const li = document.createElement('li');
+          li.textContent = `${user.username} (${user.email || 'no email'}) [${user.role}]`;
+          // Hide delete button for default admin user
+          if (!(user.role === 'admin' && user.username === 'admin')) {
+            const delBtn = document.createElement('button');
+            delBtn.textContent = 'Delete';
+            delBtn.onclick = async () => {
+              await apiRequest(`/admin/delete-user/${user.id}`, 'DELETE');
+              loadUsers();
+            };
+            li.appendChild(delBtn);
+          }
+          list.appendChild(li);
+        });
+      } catch (err) {
+        alert("Access Denied or Error: " + err.message);
+        logout();
+      }
+    }
+
+    loadUsers();
+  </script>
+</body>
+</html>
